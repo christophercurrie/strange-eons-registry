@@ -1,0 +1,22 @@
+{
+  "app": {
+    "repo": "christophercurrie/strange-eons",
+    "anchor_tag": "v3.4.4421-alpha",
+    "build_offset": 4421,
+    "asset_globs": [
+      {"glob": "*-macos-aarch64.dmg", "label": "macOS (Apple Silicon)"},
+      {"glob": "*-macos-x64.dmg",     "label": "macOS (Intel)"},
+      {"glob": "*-windows.msi",       "label": "Windows"},
+      {"glob": "*.deb",               "label": "Linux (Debian/Ubuntu, .deb)"},
+      {"glob": "*.rpm",               "label": "Linux (RHEL/Fedora, .rpm)"},
+      {"glob": "*-linux.tar.gz",      "label": "Linux (portable tarball)"}
+    ]
+  },
+  "plugins": [
+    {
+      "name": "Arkham Horror LCG",
+      "url": "https://github.com/tokeeto/StrangeEonsAHLCG/raw/refs/heads/master/ArkhamHorrorLCG/ArkhamHorrorLCG.seext",
+      "filename": "ArkhamHorrorLCG.seext"
+    }
+  ]
+}
