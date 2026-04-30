@@ -1,0 +1,64 @@
+name: Build catalog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - registry.json
+      - scripts/**
+      - .github/workflows/build-catalog.yml
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [release-published, plugin-updated]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-catalog
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Configure SSH for OpalStack
+        run: |
+          mkdir -p ~/.ssh
+          echo "$OPALSTACK_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H opal20.opalstack.com >> ~/.ssh/known_hosts
+        env:
+          OPALSTACK_SSH_KEY: ${{ secrets.OPALSTACK_SSH_KEY }}
+      - name: Fetch existing manifest from server
+        run: |
+          curl -fsSL https://strangeeons.org/manifest.json -o existing-manifest.json \
+            || curl -fsSL https://strangeeons.fizmo.org/manifest.json -o existing-manifest.json \
+            || echo "{}" > existing-manifest.json
+          echo "Existing manifest:"; head -c 2000 existing-manifest.json; echo
+      - name: Fetch latest releases from registered repos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/fetch_registered.py \
+            --registry registry.json \
+            --output bundle
+      - name: Build catalog
+        run: |
+          python3 scripts/build_catalog.py \
+            --bundle bundle \
+            --existing-manifest existing-manifest.json
+      - name: Show bundle layout
+        run: find bundle -type f -printf '%p (%s bytes)\n'
+      - name: Rsync bundle to OpalStack
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            bundle/ \
+            strangeeons@opal20.opalstack.com:~/apps/strangeeons/
