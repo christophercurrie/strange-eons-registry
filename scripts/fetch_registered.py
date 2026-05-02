@@ -19,12 +19,24 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
 
 GH_API = "https://api.github.com"
+
+# Hosts where attaching our GITHUB_TOKEN moves us from the shared anonymous
+# rate limit (per egress IP) onto the per-user limit (~5000/hr authed).
+_GH_AUTH_HOSTS = (
+    "https://api.github.com/",
+    "https://github.com/",
+    "https://raw.githubusercontent.com/",
+    "https://codeload.github.com/",
+)
+
+_TRANSIENT_HTTP = {408, 425, 429, 500, 502, 503, 504}
 
 
 def gh_request(url: str):
@@ -45,20 +57,42 @@ def gh_request_full(url: str):
         return json.loads(r.read()), r.headers
 
 
-def download(url: str, dest: Path):
+def download(url: str, dest: Path, *, max_attempts: int = 4, base_delay: float = 2.0):
     dest.parent.mkdir(parents=True, exist_ok=True)
-    req = urllib.request.Request(url, headers={"User-Agent": "strange-eons-registry"})
+    headers = {"User-Agent": "strange-eons-registry"}
     token = os.environ.get("GITHUB_TOKEN")
-    if token and url.startswith("https://api.github.com/"):
-        req.add_header("Authorization", f"Bearer {token}")
-        req.add_header("Accept", "application/octet-stream")
-    with urllib.request.urlopen(req) as r, dest.open("wb") as f:
-        while True:
-            chunk = r.read(1 << 16)
-            if not chunk:
-                break
-            f.write(chunk)
-    return dest
+    if token and url.startswith(_GH_AUTH_HOSTS):
+        headers["Authorization"] = f"Bearer {token}"
+        if url.startswith("https://api.github.com/"):
+            headers["Accept"] = "application/octet-stream"
+    req = urllib.request.Request(url, headers=headers)
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r, dest.open("wb") as f:
+                while True:
+                    chunk = r.read(1 << 16)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+            return dest
+        except urllib.error.HTTPError as e:
+            if e.code not in _TRANSIENT_HTTP or attempt == max_attempts:
+                raise
+            retry_after = e.headers.get("Retry-After") if e.headers else None
+            try:
+                delay = float(retry_after)
+            except (TypeError, ValueError):
+                delay = base_delay * (2 ** (attempt - 1))
+            print(f"warn: HTTP {e.code} on {url}; retrying in {delay:.1f}s "
+                  f"(attempt {attempt}/{max_attempts})", file=sys.stderr)
+        except (urllib.error.URLError, TimeoutError) as e:
+            if attempt == max_attempts:
+                raise
+            delay = base_delay * (2 ** (attempt - 1))
+            print(f"warn: network error on {url} ({e}); retrying in {delay:.1f}s "
+                  f"(attempt {attempt}/{max_attempts})", file=sys.stderr)
+        time.sleep(delay)
+    return dest  # unreachable; keeps type checkers happy
 
 
 def hash_and_size(path: Path):
@@ -264,13 +298,30 @@ def main():
             if entry:
                 state["app"][channel] = entry
 
-    for plugin in registry.get("plugins", []):
-        uuid, entry = collect_plugin(plugin, args.output)
+    plugins = registry.get("plugins", [])
+    failures = []
+    for plugin in plugins:
+        name = plugin.get("name") or plugin.get("filename") or plugin.get("url", "?")
+        try:
+            uuid, entry = collect_plugin(plugin, args.output)
+        except Exception as e:
+            print(f"warn: failed to fetch {name!r}: {e}; existing manifest entry "
+                  f"(if any) will be preserved", file=sys.stderr)
+            failures.append(name)
+            continue
         state["plugins"][uuid] = entry
 
     (args.output / "state.json").write_text(
         json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Fetched {len(state['app'])} app channel(s), {len(state['plugins'])} plugin(s).")
+    if failures:
+        print(f"warn: {len(failures)} of {len(plugins)} plugin(s) failed: "
+              f"{', '.join(failures)}", file=sys.stderr)
+        # Hard-fail only when nothing succeeded — build_catalog.py preserves
+        # stale entries from the existing manifest, so a partial fetch still
+        # produces a valid catalog and isn't worth waking the maintainer over.
+        if plugins and not state["plugins"]:
+            sys.exit(1)
 
 
 if __name__ == "__main__":
