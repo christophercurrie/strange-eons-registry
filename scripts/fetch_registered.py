@@ -28,6 +28,11 @@ GH_API = "https://api.github.com"
 
 
 def gh_request(url: str):
+    data, _ = gh_request_full(url)
+    return data
+
+
+def gh_request_full(url: str):
     req = urllib.request.Request(url, headers={
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
@@ -37,7 +42,7 @@ def gh_request(url: str):
     if token:
         req.add_header("Authorization", f"Bearer {token}")
     with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())
+        return json.loads(r.read()), r.headers
 
 
 def download(url: str, dest: Path):
@@ -90,9 +95,33 @@ def parse_tag(tag: str):
     return major, minor, patch, suffix or ""
 
 
+_LAST_PAGE_RE = re.compile(r'[?&]page=(\d+)[^>]*>;\s*rel="last"')
+
+
 def compare_ahead(repo: str, base: str, head: str) -> int:
-    data = gh_request(f"{GH_API}/repos/{repo}/compare/{base}...{head}")
-    return data["ahead_by"]
+    try:
+        data = gh_request(f"{GH_API}/repos/{repo}/compare/{base}...{head}")
+        return data["ahead_by"]
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+        # Anchor tag isn't reachable (e.g., never pushed to the remote). Mirror
+        # release.yml's fallback: count every commit reachable from head.
+        print(f"warn: anchor {base!r} not found on {repo}; counting commits "
+              f"reachable from {head!r} instead", file=sys.stderr)
+        return count_commits(repo, head)
+
+
+def count_commits(repo: str, sha: str) -> int:
+    """Total commits reachable from sha. Uses page=last on a per_page=1 listing."""
+    data, headers = gh_request_full(
+        f"{GH_API}/repos/{repo}/commits?sha={sha}&per_page=1")
+    link = headers.get("Link", "")
+    m = _LAST_PAGE_RE.search(link)
+    if m:
+        return int(m.group(1))
+    # No Link header means we already have the only page; one or zero commits.
+    return len(data)
 
 
 def pick_app_releases(repo: str):

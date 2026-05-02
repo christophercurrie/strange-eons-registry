@@ -1,8 +1,8 @@
 {
   "app": {
     "repo": "christophercurrie/strange-eons",
-    "anchor_tag": "v3.4.4421-alpha",
-    "build_offset": 4421,
+    "anchor_tag": "v3.5.0-alpha2",
+    "build_offset": 5296,
     "asset_globs": [
       {"glob": "*-macos-aarch64.dmg", "label": "macOS (Apple Silicon)"},
       {"glob": "*-macos-x64.dmg",     "label": "macOS (Intel)"},
