@@ -17,6 +17,11 @@
       "name": "Arkham Horror LCG",
       "url": "https://github.com/tokeeto/StrangeEonsAHLCG/raw/refs/heads/master/ArkhamHorrorLCG/ArkhamHorrorLCG.seext",
       "filename": "ArkhamHorrorLCG.seext"
+    },
+    {
+      "name": "X-wing",
+      "url": "https://github.com/Hinny/strange-eons-xwing-plug-in/raw/refs/heads/master/X-wing.seext",
+      "filename": "X-wing.seext"
     }
   ]
 }
