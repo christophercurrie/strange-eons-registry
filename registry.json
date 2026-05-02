@@ -22,6 +22,71 @@
       "name": "X-wing",
       "url": "https://github.com/Hinny/strange-eons-xwing-plug-in/raw/refs/heads/master/X-wing.seext",
       "filename": "X-wing.seext"
+    },
+    {
+      "name": "X-wing Second Edition",
+      "url": "https://github.com/Hinny/strange-eons-xwing2/raw/refs/heads/master/Xwing2.seext",
+      "filename": "Xwing2.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG.seext",
+      "filename": "TheLordOfTheRingsLCG.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, accessories",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-A.seext",
+      "filename": "TheLordOfTheRingsLCG-A.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, accessories HD",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-AHD.seext",
+      "filename": "TheLordOfTheRingsLCG-AHD.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, base",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-B.seext",
+      "filename": "TheLordOfTheRingsLCG-B.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, encounter",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-E.seext",
+      "filename": "TheLordOfTheRingsLCG-E.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, encounter HD",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-EHD.seext",
+      "filename": "TheLordOfTheRingsLCG-EHD.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, HD",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-HD.seext",
+      "filename": "TheLordOfTheRingsLCG-HD.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, icons",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-I.seext",
+      "filename": "TheLordOfTheRingsLCG-I.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, player",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-P.seext",
+      "filename": "TheLordOfTheRingsLCG-P.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, player HD",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-PHD.seext",
+      "filename": "TheLordOfTheRingsLCG-PHD.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, various",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-V.seext",
+      "filename": "TheLordOfTheRingsLCG-V.seext"
+    },
+    {
+      "name": "The Lord of the Rings LCG, various HD",
+      "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-VHD.seext",
+      "filename": "TheLordOfTheRingsLCG-VHD.seext"
     }
   ]
 }
