@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/**
+      - tests/**
+      - pytest.ini
+      - requirements-dev.txt
+      - .github/workflows/test.yml
+  pull_request:
+    paths:
+      - scripts/**
+      - tests/**
+      - pytest.ini
+      - requirements-dev.txt
+      - .github/workflows/test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - run: pytest --cov=fetch_registered --cov-report=term-missing

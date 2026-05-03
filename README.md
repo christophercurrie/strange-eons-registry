@@ -75,3 +75,13 @@ python3 scripts/build_catalog.py --bundle bundle --existing-manifest existing-ma
 `existing-manifest.json` can be `{}` for a clean run, or a copy of the
 current server manifest if you want to test the legacy-plugin
 preservation path.
+
+## Tests
+
+```
+pip install -r requirements-dev.txt
+pytest
+```
+
+GitHub Actions runs the same suite on every PR and main push that
+touches `scripts/` or `tests/`.
