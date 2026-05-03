@@ -87,6 +87,11 @@
       "name": "The Lord of the Rings LCG, various HD",
       "url": "https://github.com/HeavyKaragh/StrangeEons3-LRL-stable/raw/refs/heads/32bit(3970)/TheLordOfTheRingsLCG-VHD.seext",
       "filename": "TheLordOfTheRingsLCG-VHD.seext"
+    },
+    {
+      "name": "Developer Tools",
+      "repo": "christophercurrie/se3-developer-tools-plugin",
+      "asset": "DeveloperTools.seplugin"
     }
   ]
 }

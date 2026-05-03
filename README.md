@@ -11,22 +11,35 @@ source, rehosts them on the Strange Eons OpalStack server, and rebuilds
 
 ## Adding a plugin
 
-Open a PR adding an entry to `plugins[]` in `registry.json`:
+Open a PR adding an entry to `plugins[]` in `registry.json`. Either
+shape works:
 
 ```json
 {
   "name": "My Plugin",
-  "url": "https://github.com/<owner>/<repo>/releases/latest/download/MyPlugin.seext",
+  "url": "https://github.com/<owner>/<repo>/raw/refs/heads/main/MyPlugin.seext",
   "filename": "MyPlugin.seext"
 }
 ```
 
-- `url`: any stable HTTPS URL to your `.seext` bundle. GitHub release
+```json
+{
+  "name": "My Plugin",
+  "repo": "<owner>/<repo>",
+  "asset": "MyPlugin.seext"
+}
+```
+
+- `url` form: any stable HTTPS URL to your bundle. GitHub release
   download URLs (`/releases/latest/download/...`) and raw branch URLs
-  both work. The cron rebuilds hourly, so updates land within an hour
-  of you publishing.
-- `filename`: the name the bundle will be served as. Must match what
-  your plugin's `catalog-` keys expect to be downloaded as.
+  both work. `filename` is the served name; must match what your
+  plugin's `catalog-` keys expect to be downloaded as.
+- `repo` form: for plugins published as GitHub Releases. The latest
+  release is resolved via the API, the asset whose name matches `asset`
+  is downloaded, and the resolved tag is recorded in `state.json`.
+  `asset` doubles as the served filename.
+- The cron rebuilds hourly, so updates land within an hour of you
+  publishing.
 
 The registry pulls the catalog metadata (id, name, description, version,
 localized variants, etc.) directly from your bundle's `eons-plugin` file

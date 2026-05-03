@@ -247,11 +247,24 @@ def extract_catalog_block(eons_plugin: str) -> str:
     return "\n".join(out)
 
 
+def resolve_plugin_source(plugin: dict):
+    """Return (download_url, filename, tag). Tag is None for url-shape entries."""
+    if "repo" in plugin:
+        asset_name = plugin["asset"]
+        release = gh_request(f"{GH_API}/repos/{plugin['repo']}/releases/latest")
+        for asset in release.get("assets", []):
+            if asset["name"] == asset_name:
+                return asset["browser_download_url"], asset_name, release["tag_name"]
+        raise ValueError(
+            f"asset {asset_name!r} not found in latest release of {plugin['repo']}")
+    return plugin["url"], plugin["filename"], None
+
+
 def collect_plugin(plugin: dict, output_dir: Path):
-    filename = plugin["filename"]
+    url, filename, tag = resolve_plugin_source(plugin)
     dest = output_dir / "updates" / filename
-    print(f"  plugin[{plugin.get('name', filename)}]: downloading {plugin['url']}")
-    download(plugin["url"], dest)
+    print(f"  plugin[{plugin.get('name', filename)}]: downloading {url}")
+    download(url, dest)
     size, sha, md5 = hash_and_size(dest)
     with zipfile.ZipFile(dest) as z:
         eons_plugin = z.read("eons-plugin").decode("utf-8")
@@ -260,7 +273,7 @@ def collect_plugin(plugin: dict, output_dir: Path):
     if not catalog_block:
         print(f"warn: no catalog-* keys in {filename}; entry will be sparse",
               file=sys.stderr)
-    return uuid, {
+    entry = {
         "filename": filename,
         "size": size,
         "md5": md5,
@@ -268,6 +281,9 @@ def collect_plugin(plugin: dict, output_dir: Path):
         "catalog_id": catalog_id,
         "catalog_block": catalog_block,
     }
+    if tag:
+        entry["tag"] = tag
+    return uuid, entry
 
 
 # --- Driver ---------------------------------------------------------------
