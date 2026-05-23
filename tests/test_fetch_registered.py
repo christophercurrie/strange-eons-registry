@@ -303,9 +303,10 @@ def test_pick_app_releases(monkeypatch):
          "published_at": "2025-01-20T00:00:00Z"},
     ]
     monkeypatch.setattr(fr, "gh_request", lambda url: releases)
-    stable, pre = fr.pick_app_releases("o/r")
+    stable, pre, suppressed = fr.pick_app_releases("o/r")
     assert stable["tag_name"] == "v2.9.0"
     assert pre["tag_name"]    == "v3.0.0-beta1"
+    assert suppressed == ()
 
 
 def test_pick_app_releases_drops_stale_prerelease(monkeypatch):
@@ -317,9 +318,10 @@ def test_pick_app_releases_drops_stale_prerelease(monkeypatch):
          "published_at": "2025-02-15T00:00:00Z"},
     ]
     monkeypatch.setattr(fr, "gh_request", lambda url: releases)
-    stable, pre = fr.pick_app_releases("o/r")
+    stable, pre, suppressed = fr.pick_app_releases("o/r")
     assert stable["tag_name"] == "v2.9.0"
     assert pre is None
+    assert suppressed == ("experimental",)
 
 
 def test_pick_app_releases_drops_prerelease_tied_with_stable(monkeypatch):
@@ -331,8 +333,9 @@ def test_pick_app_releases_drops_prerelease_tied_with_stable(monkeypatch):
          "published_at": "2025-03-01T00:00:00Z"},
     ]
     monkeypatch.setattr(fr, "gh_request", lambda url: releases)
-    stable, pre = fr.pick_app_releases("o/r")
+    stable, pre, suppressed = fr.pick_app_releases("o/r")
     assert pre is None
+    assert suppressed == ("experimental",)
 
 
 def test_pick_app_releases_keeps_prerelease_when_timestamp_missing(monkeypatch):
@@ -343,9 +346,10 @@ def test_pick_app_releases_keeps_prerelease_when_timestamp_missing(monkeypatch):
         {"draft": False, "prerelease": True,  "tag_name": "v2.8.0-beta3"},
     ]
     monkeypatch.setattr(fr, "gh_request", lambda url: releases)
-    stable, pre = fr.pick_app_releases("o/r")
+    stable, pre, suppressed = fr.pick_app_releases("o/r")
     assert stable["tag_name"] == "v2.9.0"
     assert pre["tag_name"]    == "v2.8.0-beta3"
+    assert suppressed == ()
 
 
 def test_pick_app_releases_falls_back_to_created_at(monkeypatch):
@@ -359,14 +363,29 @@ def test_pick_app_releases_falls_back_to_created_at(monkeypatch):
          "published_at": None, "created_at": "2025-02-15T00:00:00Z"},
     ]
     monkeypatch.setattr(fr, "gh_request", lambda url: releases)
-    stable, pre = fr.pick_app_releases("o/r")
+    stable, pre, suppressed = fr.pick_app_releases("o/r")
     assert pre is None
+    assert suppressed == ("experimental",)
 
 
 def test_pick_app_releases_empty(monkeypatch):
     monkeypatch.setattr(fr, "gh_request", lambda url: [])
-    stable, pre = fr.pick_app_releases("o/r")
+    stable, pre, suppressed = fr.pick_app_releases("o/r")
     assert stable is None and pre is None
+    assert suppressed == ()
+
+
+def test_pick_app_releases_no_stable(monkeypatch):
+    # No stable yet, only a prerelease: don't claim suppression.
+    releases = [
+        {"draft": False, "prerelease": True,  "tag_name": "v3.0.0-beta1",
+         "published_at": "2025-03-15T00:00:00Z"},
+    ]
+    monkeypatch.setattr(fr, "gh_request", lambda url: releases)
+    stable, pre, suppressed = fr.pick_app_releases("o/r")
+    assert stable is None
+    assert pre["tag_name"] == "v3.0.0-beta1"
+    assert suppressed == ()
 
 
 # --- download retry ----------------------------------------------------

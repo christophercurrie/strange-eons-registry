@@ -218,18 +218,23 @@ def load_json(path: Path | None):
 def merge(state: dict, existing: dict, when: datetime.datetime) -> dict:
     out = {"plugins": {}}
 
+    app_state = state.get("app", {})
     for channel in ("stable", "experimental"):
-        new = state.get("app", {}).get(channel)
-        old = existing.get(channel)
-        if new:
-            old_tag = derive_existing_tag(old)
-            if old_tag == new["tag"] and old and old.get("catalog_id"):
-                new["catalog_id"] = old["catalog_id"]
-            else:
-                new["catalog_id"] = gen_catalog_id(channel, when)
-            out[channel] = new
-        elif old:
-            out[channel] = old
+        if channel in app_state:
+            new = app_state[channel]
+            if new:
+                old = existing.get(channel)
+                old_tag = derive_existing_tag(old)
+                if old_tag == new["tag"] and old and old.get("catalog_id"):
+                    new["catalog_id"] = old["catalog_id"]
+                else:
+                    new["catalog_id"] = gen_catalog_id(channel, when)
+                out[channel] = new
+            # Explicit None: fetcher deliberately suppressed the channel
+            # (e.g. a prerelease that stable has superseded); drop the
+            # existing manifest entry instead of carrying it forward.
+        elif existing.get(channel):
+            out[channel] = existing[channel]
 
     out["plugins"] = dict(existing.get("plugins", {}))
     out["plugins"].update(state.get("plugins", {}))

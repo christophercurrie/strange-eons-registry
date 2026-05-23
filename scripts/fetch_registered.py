@@ -163,7 +163,7 @@ def _release_timestamp(release: dict) -> str:
 
 
 def pick_app_releases(repo: str):
-    """Return (latest_stable, latest_prerelease). Either may be None.
+    """Return (latest_stable, latest_prerelease, suppressed_channels).
 
     The prerelease is suppressed when it isn't strictly newer than the
     stable release, so a stale beta doesn't keep haunting the catalog
@@ -171,16 +171,22 @@ def pick_app_releases(repo: str):
     ISO-8601 UTC strings, which compare correctly lexicographically; if
     either side has no usable timestamp we keep the prerelease (safer:
     matches prior behavior).
+
+    `suppressed_channels` is a tuple of channel names that were dropped
+    deliberately. The catalog builder uses it to clear matching entries
+    in the existing on-server manifest instead of preserving them.
     """
     releases = gh_request(f"{GH_API}/repos/{repo}/releases?per_page=30")
     stable = next((r for r in releases if not r["draft"] and not r["prerelease"]), None)
     pre = next((r for r in releases if not r["draft"] and r["prerelease"]), None)
+    suppressed = ()
     if stable and pre:
         s_ts = _release_timestamp(stable)
         p_ts = _release_timestamp(pre)
         if s_ts and p_ts and p_ts <= s_ts:
             pre = None
-    return stable, pre
+            suppressed = ("experimental",)
+    return stable, pre, suppressed
 
 
 def match_assets(release: dict, globs: list) -> list:
@@ -319,17 +325,20 @@ def main():
     app = registry.get("app")
     if app:
         try:
-            stable, pre = pick_app_releases(app["repo"])
+            stable, pre, suppressed = pick_app_releases(app["repo"])
         except urllib.error.HTTPError as e:
             print(f"warn: app releases lookup failed ({e}); skipping app section",
                   file=sys.stderr)
             stable = pre = None
+            suppressed = ()
         for channel, release in (("stable", stable), ("experimental", pre)):
             entry = collect_app_channel(
                 app["repo"], app["anchor_tag"], app["build_offset"],
                 release, app["asset_globs"], args.output)
             if entry:
                 state["app"][channel] = entry
+            elif channel in suppressed:
+                state["app"][channel] = None
 
     plugins = registry.get("plugins", [])
     failures = []
