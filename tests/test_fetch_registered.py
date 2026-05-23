@@ -291,16 +291,76 @@ def test_collect_app_channel_no_matching_assets(tmp_path, monkeypatch):
 
 def test_pick_app_releases(monkeypatch):
     releases = [
-        {"draft": True,  "prerelease": False, "tag_name": "v3.0.0-draft"},
-        {"draft": False, "prerelease": True,  "tag_name": "v3.0.0-beta1"},
-        {"draft": False, "prerelease": False, "tag_name": "v2.9.0"},
-        {"draft": False, "prerelease": True,  "tag_name": "v2.8.0-beta3"},
-        {"draft": False, "prerelease": False, "tag_name": "v2.8.0"},
+        {"draft": True,  "prerelease": False, "tag_name": "v3.0.0-draft",
+         "published_at": "2025-04-01T00:00:00Z"},
+        {"draft": False, "prerelease": True,  "tag_name": "v3.0.0-beta1",
+         "published_at": "2025-03-15T00:00:00Z"},
+        {"draft": False, "prerelease": False, "tag_name": "v2.9.0",
+         "published_at": "2025-02-01T00:00:00Z"},
+        {"draft": False, "prerelease": True,  "tag_name": "v2.8.0-beta3",
+         "published_at": "2025-01-10T00:00:00Z"},
+        {"draft": False, "prerelease": False, "tag_name": "v2.8.0",
+         "published_at": "2025-01-20T00:00:00Z"},
     ]
     monkeypatch.setattr(fr, "gh_request", lambda url: releases)
     stable, pre = fr.pick_app_releases("o/r")
     assert stable["tag_name"] == "v2.9.0"
     assert pre["tag_name"]    == "v3.0.0-beta1"
+
+
+def test_pick_app_releases_drops_stale_prerelease(monkeypatch):
+    # Stable was cut after the beta — the beta should not be republished.
+    releases = [
+        {"draft": False, "prerelease": False, "tag_name": "v2.9.0",
+         "published_at": "2025-03-01T00:00:00Z"},
+        {"draft": False, "prerelease": True,  "tag_name": "v2.9.0-beta2",
+         "published_at": "2025-02-15T00:00:00Z"},
+    ]
+    monkeypatch.setattr(fr, "gh_request", lambda url: releases)
+    stable, pre = fr.pick_app_releases("o/r")
+    assert stable["tag_name"] == "v2.9.0"
+    assert pre is None
+
+
+def test_pick_app_releases_drops_prerelease_tied_with_stable(monkeypatch):
+    # Same timestamp: the stable wins (strict newer-than required).
+    releases = [
+        {"draft": False, "prerelease": False, "tag_name": "v2.9.0",
+         "published_at": "2025-03-01T00:00:00Z"},
+        {"draft": False, "prerelease": True,  "tag_name": "v2.9.0-rc1",
+         "published_at": "2025-03-01T00:00:00Z"},
+    ]
+    monkeypatch.setattr(fr, "gh_request", lambda url: releases)
+    stable, pre = fr.pick_app_releases("o/r")
+    assert pre is None
+
+
+def test_pick_app_releases_keeps_prerelease_when_timestamp_missing(monkeypatch):
+    # Defensive: if GitHub ever omits both timestamp fields we preserve
+    # the prior "publish both" behavior rather than dropping silently.
+    releases = [
+        {"draft": False, "prerelease": False, "tag_name": "v2.9.0"},
+        {"draft": False, "prerelease": True,  "tag_name": "v2.8.0-beta3"},
+    ]
+    monkeypatch.setattr(fr, "gh_request", lambda url: releases)
+    stable, pre = fr.pick_app_releases("o/r")
+    assert stable["tag_name"] == "v2.9.0"
+    assert pre["tag_name"]    == "v2.8.0-beta3"
+
+
+def test_pick_app_releases_falls_back_to_created_at(monkeypatch):
+    # published_at can be null for releases created via the API without
+    # being published; created_at is always set, so we use it as a
+    # secondary key.
+    releases = [
+        {"draft": False, "prerelease": False, "tag_name": "v2.9.0",
+         "published_at": None, "created_at": "2025-03-01T00:00:00Z"},
+        {"draft": False, "prerelease": True,  "tag_name": "v2.9.0-beta2",
+         "published_at": None, "created_at": "2025-02-15T00:00:00Z"},
+    ]
+    monkeypatch.setattr(fr, "gh_request", lambda url: releases)
+    stable, pre = fr.pick_app_releases("o/r")
+    assert pre is None
 
 
 def test_pick_app_releases_empty(monkeypatch):

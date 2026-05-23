@@ -158,11 +158,28 @@ def count_commits(repo: str, sha: str) -> int:
     return len(data)
 
 
+def _release_timestamp(release: dict) -> str:
+    return release.get("published_at") or release.get("created_at") or ""
+
+
 def pick_app_releases(repo: str):
-    """Return (latest_stable, latest_prerelease). Either may be None."""
+    """Return (latest_stable, latest_prerelease). Either may be None.
+
+    The prerelease is suppressed when it isn't strictly newer than the
+    stable release, so a stale beta doesn't keep haunting the catalog
+    after the stable that supersedes it ships. Timestamps are GitHub's
+    ISO-8601 UTC strings, which compare correctly lexicographically; if
+    either side has no usable timestamp we keep the prerelease (safer:
+    matches prior behavior).
+    """
     releases = gh_request(f"{GH_API}/repos/{repo}/releases?per_page=30")
     stable = next((r for r in releases if not r["draft"] and not r["prerelease"]), None)
     pre = next((r for r in releases if not r["draft"] and r["prerelease"]), None)
+    if stable and pre:
+        s_ts = _release_timestamp(stable)
+        p_ts = _release_timestamp(pre)
+        if s_ts and p_ts and p_ts <= s_ts:
+            pre = None
     return stable, pre
 
 
