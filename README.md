@@ -62,7 +62,7 @@ in-app updater (catalog-url-1) sees the listing
 
 App installers (Strange Eons itself) flow through the same registry: the
 `app` section of `registry.json` points at the
-`christophercurrie/strange-eons` repo, and the workflow picks the latest
+`strange-eons/strange-eons` repo, and the workflow picks the latest
 stable + latest pre-release.
 
 ## Local testing

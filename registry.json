@@ -1,6 +1,6 @@
 {
   "app": {
-    "repo": "christophercurrie/strange-eons",
+    "repo": "strange-eons/strange-eons",
     "anchor_tag": "v3.5.0-alpha2",
     "build_offset": 5296,
     "asset_globs": [

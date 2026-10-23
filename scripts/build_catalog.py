@@ -131,7 +131,7 @@ INDEX_TEMPLATE = """<!doctype html>
   </style>
 </head>
 <body>
-  <a href="https://github.com/christophercurrie/strange-eons">
+  <a href="https://github.com/strange-eons/strange-eons">
     <img class="github-ribbon"
          src="https://github.blog/wp-content/uploads/2008/12/forkme_right_darkblue_121621.png"
          alt="Fork me on GitHub"

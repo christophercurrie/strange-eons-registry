@@ -80,3 +80,9 @@ def test_merge_plugins_overlay_existing():
     out = bc.merge(state, existing, WHEN)
     assert out["plugins"]["uuid-a"]["filename"] == "new.seext"
     assert out["plugins"]["uuid-b"]["filename"] == "kept.seext"
+
+
+def test_index_links_to_org_repo(tmp_path):
+    bc.write_index(tmp_path, {})
+    html = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert 'href="https://github.com/strange-eons/strange-eons"' in html
